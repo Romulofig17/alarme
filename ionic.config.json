@@ -1,0 +1,7 @@
+{
+  "name": "app-alarme",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}

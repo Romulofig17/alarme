@@ -1,0 +1,89 @@
+<ion-content>
+  <div class="home-container">
+    <div id="status-card" class="status-card" [ngClass]="movimentoDetectado ? 'status-alert' : 'status-safe'">
+      <div class="status-icon">
+        <img class="icon-xxl" [src]="movimentoDetectado ? 'assets/icon/movement.png' : 'assets/icon/safety.png'" [alt]="movimentoDetectado ? 'Movimento Detectado' : 'Tudo Calmo'" />
+      </div>
+      <span id="status-texto" class="status-texto">{{ movimentoDetectado ? 'Movimento Detectado' : 'Tudo Calmo' }}</span>
+      <span id="status-subtexto" class="status-subtexto">{{ movimentoDetectado ? 'Verifique a área!' : 'Ambiente Seguro' }}</span>
+    </div>
+
+    <button id="alarme-btn" class="alarme-btn" [ngClass]="alarmeAtivo ? 'alarme-ativo' : 'alarme-inativo'" [disabled]="!movimentoDetectado" (click)="desligarAlarme()">
+      <span class="alarme-btn-icon" [innerHTML]="alarmeAtivo ? iconAlarmeAtivo : iconAlarmeInativo"></span>
+      <span class="alarme-btn-text">{{ alarmeAtivo ? 'Desativar Alarme' : 'Alarme Desativado' }}</span>
+    </button>
+
+    <div class="spacer"></div>
+
+    <div class="historico-wrapper">
+      <h2 class="historico-titulo">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="icon-sm">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h7.5M8.25 12h7.5m-7.5 5.25h7.5M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0z" />
+        </svg>
+        Histórico Recente
+      </h2>
+      <div id="historico-recente" class="historico-recente">
+        @if (historico.length === 0) {
+          <div class="historico-vazio">Sem registros</div>
+        } @else {
+          @for (item of historicoRecente; track item) {
+            <div class="historico-item">
+              <div class="historico-icon" [ngClass]="item.movimento ? 'icon-movimento' : 'icon-sistema'">
+                @if (item.movimento) {
+                  <img src="assets/icon/alarm.png" class="icon-md" alt="Movimento" />
+                } @else {
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="icon-md">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M8.25 21a7.5 7.5 0 0 1-7.5-7.5c0-4.142 3.358-7.5 7.5-7.5s7.5 3.358 7.5 7.5c0 4.142-3.358 7.5-7.5 7.5Z" />
+                  </svg>
+                }
+              </div>
+              <div class="historico-textos">
+                <div class="item-titulo">{{ item.movimento ? 'Movimento Detectado' : 'Sistema' }}</div>
+                <div class="item-data">{{ timestampParaData(item.timestamp) }}</div>
+              </div>
+            </div>
+          }
+        }
+      </div>
+      <button id="open-modal-btn" class="historico-botao" (click)="openModal()">
+        Ver Histórico Completo
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="icon-sm ml-1">
+          <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+        </svg>
+      </button>
+    </div>
+
+    <ion-modal [isOpen]="modalOpen" (willDismiss)="modalOpen=false" cssClass="modal-centered">
+      <ng-template>
+        <div class="modal-card">
+          <div class="modal-header">
+            <div class="modal-title">Histórico Completo</div>
+            <button class="modal-close" (click)="closeModal()">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="icon-md">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div class="modal-content">
+            @for (grupo of historicoPorDia; track grupo.dia) {
+              <div class="dia-section">
+                <div class="dia-header">{{ grupo.dia }}</div>
+                @for (item of grupo.itens; track item) {
+                  <div class="historico-item">
+                    <div class="historico-icon icon-movimento">
+                      <img src="assets/icon/alarm.png" class="icon-md" alt="Movimento" />
+                    </div>
+                    <div class="historico-textos">
+                      <div class="item-titulo">Movimento Detectado</div>
+                      <div class="item-data">{{ timestampParaData(item.timestamp) }}</div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      </ng-template>
+    </ion-modal>
+  </div>
+</ion-content>

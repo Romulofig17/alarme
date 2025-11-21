@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sensor Guard (Tailwind)</title>
+
+    <!-- 1. Carregar Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- 2. Font (Inter) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      /* Estilo base com a fonte Inter */
+      body {
+        font-family: 'Inter', sans-serif;
+      }
+
+      /* Classes dinâmicas e animações para o card de status */
+      /* Keyframes para a animação de "pulso" */
+      @keyframes pulse-safe {
+        0%,
+        100% {
+          box-shadow: 0 0 15px -5px theme('colors.cyan.400');
+        }
+        50% {
+          box-shadow: 0 0 30px 0px theme('colors.cyan.400');
+        }
+      }
+      @keyframes pulse-alert {
+        0%,
+        100% {
+          box-shadow: 0 0 20px -5px theme('colors.red.500');
+        }
+        50% {
+          box-shadow: 0 0 40px 5px theme('colors.red.500');
+        }
+      }
+
+      /* Classes que serão aplicadas via JS */
+      .status-safe {
+        background: linear-gradient(145deg, #1f2937, #111827);
+        color: #22d3ee; /* text-cyan-400 */
+        /* Aplica a animação de pulso seguro */
+        animation: pulse-safe 2s infinite;
+      }
+      .status-alert {
+        background: linear-gradient(145deg, #450a0a, #220505);
+        color: #f87171; /* text-red-400 */
+        /* Aplica a animação de pulso alerta (mais rápida) */
+        animation: pulse-alert 1s infinite;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-900 text-white antialiased">
+    <div
+      class="flex flex-col min-h-screen items-center justify-between p-4 sm:p-8"
+    >
+      <!-- 1. Card Principal de Status do Sensor -->
+      <div
+        id="status-card"
+        class="w-full max-w-md rounded-3xl p-8 min-h-[260px] flex flex-col items-center justify-center transition-all duration-300"
+      >
+        <!-- O ícone será inserido aqui pelo JS -->
+        <div id="status-icon" class="mb-4"></div>
+        <span
+          id="status-texto"
+          class="text-2xl font-bold tracking-wider uppercase"
+        >
+          <!-- Texto inserido pelo JS -->
+        </span>
+        <span id="status-subtexto" class="text-sm opacity-80 mt-2">
+          <!-- Subtexto inserido pelo JS -->
+        </span>
+      </div>
+
+      <!-- 2. Botão de Ação (Desativar/Ativar Alarme) -->
+      <button
+        id="alarme-btn"
+        class="w-full max-w-md h-14 rounded-full font-bold text-lg tracking-wide shadow-lg mt-10 flex items-center justify-center transition-all duration-300"
+      >
+        <div id="alarme-btn-icon" class="mr-2"></div>
+        <span id="alarme-btn-text"></span>
+      </button>
+
+      <!-- Spacer para empurrar o histórico para baixo -->
+      <div class="flex-grow"></div>
+
+      <!-- 3. Seção de Histórico Recente -->
+      <div class="w-full max-w-md mt-10">
+        <h2
+          class="text-lg font-semibold text-gray-300 mb-2 px-2 flex items-center"
+        >
+          <!-- Ícone de Histórico -->
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="1.5"
+            stroke="currentColor"
+            class="w-5 h-5 mr-2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M8.25 6.75h7.5M8.25 12h7.5m-7.5 5.25h7.5M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0z"
+            />
+          </svg>
+          Histórico Recente
+        </h2>
+        <div
+          id="historico-recente"
+          class="space-y-2 rounded-2xl overflow-hidden"
+        >
+          <!-- Itens do histórico serão inseridos aqui pelo JS -->
+        </div>
+        <button
+          id="open-modal-btn"
+          class="w-full mt-4 font-semibold text-cyan-400 hover:text-cyan-300 flex items-center justify-center"
+        >
+          Ver Histórico Completo
+          <!-- Ícone "chevron" -->
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke-width="2"
+            stroke="currentColor"
+            class="w-5 h-5 ml-1"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="m8.25 4.5 7.5 7.5-7.5 7.5"
+            />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Modal para Histórico Completo -->
+    <div
+      id="modal-overlay"
+      class="fixed inset-0 bg-black/70 z-40 hidden opacity-0 transition-opacity duration-300"
+    ></div>
+
+    <div
+      id="modal-content"
+      class="fixed top-1/2 left-1/2 w-full max-w-lg z-50 hidden opacity-0 scale-95 transition-all duration-300"
+      style="transform: translate(-50%, -50%)"
+    >
+      <div class="bg-gray-800 rounded-2xl shadow-xl max-h-[70vh] flex flex-col">
+        <!-- Cabeçalho do Modal -->
+        <div
+          class="flex items-center justify-between p-4 border-b border-gray-700"
+        >
+          <h3 class="text-lg font-semibold">Histórico Completo</h3>
+          <button id="close-modal-btn" class="text-gray-400 hover:text-white">
+            <!-- Ícone "X" -->
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="w-6 h-6"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M6 18 18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
+        <!-- Conteúdo do Modal (rolável) -->
+        <div id="historico-completo" class="p-4 overflow-y-auto space-y-2">
+          <!-- Histórico completo será inserido aqui -->
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Aguarda o DOM estar pronto
+      document.addEventListener('DOMContentLoaded', () => {
+        // --- ESTADO DA APLICAÇÃO ---
+        let movimentoDetectado = false;
+        let alarmeAtivo = true;
+        const historico = [
+          { id: 1, data: '17/11/2025 - 23:05:12', evento: 'Movimento' },
+          { id: 2, data: '17/11/2025 - 22:15:45', evento: 'Sistema' },
+          { id: 3, data: '17/11/2025 - 20:30:02', evento: 'Movimento' },
+          { id: 4, data: '16/11/2025 - 18:00:00', evento: 'Sistema' },
+          { id: 5, data: '16/11/2025 - 15:22:10', evento: 'Movimento' },
+          { id: 6, data: '15/11/2025 - 09:10:05', evento: 'Movimento' },
+        ];
+
+        // --- ÍCONES SVG (como strings) ---
+        const iconSafe = `
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-20 h-20">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751A11.953 11.953 0 0 0 12 2.724Z" />
+          </svg>`;
+        const iconAlert = `
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-20 h-20">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l7.693-7.693a.75.75 0 0 1 1.06 1.06l-7.693 7.693a3 3 0 1 0 4.243 4.242l7.693-7.693a.75.75 0 0 1 1.06 1.06Z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25c.828 0 1.5-.672 1.5-1.5s-.672-1.5-1.5-1.5-1.5.672-1.5 1.5.672 1.5 1.5 1.5Z" />
+          </svg>`; // Ícone de "movimento" (mão)
+        const iconAlarmeAtivo = `
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.31 5.772A23.848 23.848 0 0 0 9.143 17.082ZM12 21a3 3 0 0 0 3-3H9a3 3 0 0 0 3 3Z" />
+          </svg>`;
+        const iconAlarmeInativo = `
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.31 5.772A23.848 23.848 0 0 0 9.143 17.082M12 21a3 3 0 0 0 3-3H9a3 3 0 0 0 3 3Z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 4.5 15 15" />
+          </svg>`;
+
+        // --- SELETORES DE ELEMENTOS ---
+        const statusCard = document.getElementById('status-card');
+        const statusIcon = document.getElementById('status-icon');
+        const statusTexto = document.getElementById('status-texto');
+        const statusSubtexto = document.getElementById('status-subtexto');
+        const alarmeBtn = document.getElementById('alarme-btn');
+        const alarmeBtnIcon = document.getElementById('alarme-btn-icon');
+        const alarmeBtnText = document.getElementById('alarme-btn-text');
+        const listaRecente = document.getElementById('historico-recente');
+        const listaCompleta = document.getElementById('historico-completo');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalContent = document.getElementById('modal-content');
+        const openModalBtn = document.getElementById('open-modal-btn');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+
+        // --- FUNÇÕES DE RENDERIZAÇÃO ---
+
+        function renderHistorico() {
+          listaRecente.innerHTML = '';
+          listaCompleta.innerHTML = '';
+
+          const historicoRecente = historico.slice(0, 3);
+
+          historicoRecente.forEach((item) => {
+            listaRecente.appendChild(criarItemHistorico(item));
+          });
+
+          historico.forEach((item) => {
+            listaCompleta.appendChild(criarItemHistorico(item));
+          });
+        }
+
+        function criarItemHistorico(item) {
+          const div = document.createElement('div');
+          const isMovimento = item.evento === 'Movimento';
+
+          div.className =
+            'bg-gray-800 p-3 rounded-lg flex items-center space-x-3';
+          
+          // Define a cor e o ícone com base no evento
+          const iconColor = isMovimento ? 'text-red-400' : 'text-green-400';
+          const icon = isMovimento
+            ? `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 ${iconColor}">
+                 <path stroke-linecap="round" stroke-linejoin="round" d="m18.375 12.739-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l7.693-7.693a.75.75 0 0 1 1.06 1.06l-7.693 7.693a3 3 0 1 0 4.243 4.242l7.693-7.693a.75.75 0 0 1 1.06 1.06Z" />
+               </svg>`
+            : `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 ${iconColor}">
+                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M8.25 21a7.5 7.5 0 0 1-7.5-7.5c0-4.142 3.358-7.5 7.5-7.5s7.5 3.358 7.5 7.5c0 4.142-3.358 7.5-7.5 7.5Z" />
+               </svg>`;
+
+          div.innerHTML = `
+            <div>${icon}</div>
+            <div class="flex-1">
+              <h3 class="font-medium">${item.evento} Detectado</h3>
+              <p class="text-sm text-gray-400">${item.data}</p>
+            </div>
+          `;
+          return div;
+        }
+
+        function updateStatusUI() {
+          if (movimentoDetectado) {
+            statusCard.classList.remove('status-safe');
+            statusCard.classList.add('status-alert');
+            statusIcon.innerHTML = iconAlert;
+            statusTexto.textContent = 'Movimento Detectado';
+            statusSubtexto.textContent = 'Verifique a área!';
+          } else {
+            statusCard.classList.remove('status-alert');
+            statusCard.classList.add('status-safe');
+            statusIcon.innerHTML = iconSafe;
+            statusTexto.textContent = 'Tudo Calmo';
+            statusSubtexto.textContent = 'Ambiente Seguro';
+          }
+        }
+
+        function updateAlarmeUI() {
+          if (alarmeAtivo) {
+            // Estilo do botão "Ativo" (pronto para desativar)
+            alarmeBtn.className = alarmeBtn.className.replace(
+              /bg-gray-700|text-gray-400|hover:bg-gray-600|border-gray-600/g,
+              ''
+            );
+            alarmeBtn.classList.add(
+              'bg-red-600',
+              'text-white',
+              'hover:bg-red-700'
+            );
+            alarmeBtnIcon.innerHTML = iconAlarmeAtivo;
+            alarmeBtnText.textContent = 'Desativar Alarme';
+          } else {
+            // Estilo do botão "Inativo"
+            alarmeBtn.className = alarmeBtn.className.replace(
+              /bg-red-600|text-white|hover:bg-red-700/g,
+              ''
+            );
+            alarmeBtn.classList.add(
+              'bg-gray-700',
+              'text-gray-400',
+              'hover:bg-gray-600'
+            );
+            alarmeBtnIcon.innerHTML = iconAlarmeInativo;
+            alarmeBtnText.textContent = 'Alarme Desativado';
+          }
+        }
+
+        // --- FUNÇÕES DE LÓGICA DE EVENTOS ---
+
+        function toggleAlarme() {
+          alarmeAtivo = !alarmeAtivo;
+          if (!alarmeAtivo) {
+            // Se o alarme for desativado, o status de movimento é "resetado"
+            movimentoDetectado = false;
+            updateStatusUI();
+          }
+          updateAlarmeUI();
+        }
+
+        function simularDeteccao() {
+          if (!alarmeAtivo) return; // Só detecta se o alarme estiver ativo
+
+          movimentoDetectado = true;
+          // Adiciona ao histórico
+          historico.unshift({
+            id: Date.now(),
+            data: new Date().toLocaleString('pt-BR'),
+            evento: 'Movimento',
+          });
+
+          renderHistorico();
+          updateStatusUI();
+        }
+
+        function abrirModal() {
+          modalOverlay.classList.remove('hidden');
+          modalContent.classList.remove('hidden');
+          // Força um reflow para a animação funcionar
+          void modalOverlay.offsetWidth;
+          void modalContent.offsetWidth;
+          
+          modalOverlay.classList.add('opacity-100');
+          modalContent.classList.add('opacity-100', 'scale-100');
+        }
+
+        function fecharModal() {
+          modalOverlay.classList.remove('opacity-100');
+          modalContent.classList.remove('opacity-100', 'scale-100');
+          
+          // Aguarda a animação terminar para esconder
+          setTimeout(() => {
+            modalOverlay.classList.add('hidden');
+            modalContent.classList.add('hidden');
+          }, 300); // Duração da transição
+        }
+
+        // --- INICIALIZAÇÃO E EVENT LISTENERS ---
+        alarmeBtn.addEventListener('click', toggleAlarme);
+        openModalBtn.addEventListener('click', abrirModal);
+        closeModalBtn.addEventListener('click', fecharModal);
+        modalOverlay.addEventListener('click', fecharModal);
+
+        // Renderiza o estado inicial
+        renderHistorico();
+        updateStatusUI();
+        updateAlarmeUI();
+
+        // Simula uma detecção de movimento após 3 segundos
+        setTimeout(simularDeteccao, 3000);
+      });
+    </script>
+  </body>
+</html>

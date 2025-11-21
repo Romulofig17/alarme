@@ -1,0 +1,140 @@
+@keyframes pulse-safe {
+  0%, 100% {
+    box-shadow: 0 0 15px -5px #22d3ee;
+  }
+  50% {
+    box-shadow: 0 0 30px 0px #22d3ee;
+  }
+}
+
+@keyframes pulse-alert {
+  0%, 100% {
+    box-shadow: 0 0 20px -5px #ef4444;
+  }
+  50% {
+    box-shadow: 0 0 40px 5px #ef4444;
+  }
+}
+
+body{
+  display: flex;
+  margin: 0;
+}
+
+ion-content {
+  --padding-top: 0;
+  --padding-bottom: 0;
+  --padding-start: 0;
+  --padding-end: 0;
+  --background: transparent;
+}
+
+.home-container {
+  display: flex;
+  margin: 0;
+  flex-direction: column;
+  width: 100%;
+  min-height: calc(100vh - var(--ion-safe-area-top) - var(--ion-safe-area-bottom));
+  align-items: center;
+  background: radial-gradient(circle, #202b3a, #0f151d );
+  padding: 20px;
+  padding-top: calc(var(--ion-safe-area-top) + 30px);
+  padding-top: calc(env(safe-area-inset-top) + 30px);
+}
+
+.status-card {
+  width: 100%;
+  max-width: 640px;
+  border-radius: 24px;
+  padding: 32px;
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.status-safe {
+  background: linear-gradient(145deg, #1f2937, #111827);
+  color: #22d3ee;
+  animation: pulse-safe 4s infinite;
+}
+
+.status-alert {
+  background: linear-gradient(145deg, #450a0a, #220505);
+  color: #f87171;
+  animation: pulse-alert 1.5s infinite;
+}
+
+.status-icon { margin-bottom: 16px; }
+.status-texto { font-size: 20px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.status-subtexto { font-size: 14px; opacity: 0.8; margin-top: 8px; }
+
+.icon-xxl { width: 80px; height: 80px; }
+.icon-md { width: 24px; height: 24px; }
+.icon-sm { width: 20px; height: 20px; }
+
+.alarme-btn {
+  width: 100%;
+  max-width: 640px;
+  height: 56px;
+  border-radius: 25px;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.06em;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+  margin-top: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  border: none;
+}
+
+.alarme-ativo { background: #dc2626; color: #ffffff; }
+.alarme-ativo:hover { background: #b91c1c; }
+.alarme-inativo { background: #374151; color: #9ca3af; }
+.alarme-inativo:hover { background: #4b5563; }
+.alarme-btn-icon { margin-right: 8px; display: flex; }
+.alarme-btn:disabled { opacity: 0.3; background: #374151; cursor: not-allowed; }
+
+.spacer { flex-grow: 1; }
+
+.historico-wrapper { width: 100%; max-width: 640px; margin-top: 24px; }
+.historico-titulo { font-size: 18px; font-weight: 600; color: #d1d5db; margin-bottom: 8px; display: flex; align-items: center; }
+.ml-1 { margin-left: 4px; }
+
+.historico-recente { display: flex; flex-direction: column; gap: 8px; }
+.historico-item { background: #1f2937; padding: 12px; border-radius: 12px; display: flex; align-items: center; gap: 12px; }
+.historico-icon { display: flex; }
+.icon-movimento { color: #f87171; }
+.icon-sistema { color: #34d399; }
+.historico-textos { flex: 1; }
+.item-titulo { font-weight: 500; }
+.item-data { font-size: 12px; color: #9ca3af; }
+.historico-vazio { color: #9ca3af; padding: 12px; }
+.historico-botao { width: 100%; margin-top: 12px; font-weight: 600; color: #22d3ee; background: transparent; border: none; display: flex; align-items: center; justify-content: center; }
+.historico-botao:hover { color: #67e8f9; }
+
+.modal-card { background: #1f2937; border-radius: 16px; max-height: 70vh; display: flex; flex-direction: column; }
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px; border-bottom: 1px solid #374151; }
+.modal-title { font-size: 18px; font-weight: 600; }
+.modal-close { background: transparent; border: none; color: #9ca3af; }
+.modal-close:hover { color: #ffffff; }
+.modal-content { padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.modal-centered {
+  --width: 90vw;
+  --max-width: 600px;
+  --height: auto;
+  --border-radius: 16px;
+  --backdrop-opacity: 0.7;
+}
+
+ion-modal.modal-centered::part(backdrop) { backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+
+@media (min-width: 768px) {
+  .modal-centered { --width: 600px; }
+}
+.dia-section { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.dia-header { font-size: 14px; font-weight: 600; color: #9ca3af; padding: 8px 4px; border-bottom: 1px solid #374151; }
