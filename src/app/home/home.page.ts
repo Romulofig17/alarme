@@ -1,15 +1,16 @@
 import { Component, OnInit, NgZone } from '@angular/core';
 import { NgClass } from '@angular/common';
-import { IonContent, IonModal } from '@ionic/angular/standalone';
+import { FormsModule } from '@angular/forms';
+import { IonContent, IonModal, IonToggle, IonLabel, IonCard, IonCardContent, IonCardHeader, IonCardTitle } from '@ionic/angular/standalone';
 
-import { ref, onValue, set, onChildAdded, query, orderByChild, startAfter } from 'firebase/database';
+import { ref, onValue, set, onChildAdded, query, orderByChild, startAfter, push } from 'firebase/database';
 import { db } from '../../firebase';
 
 @Component({
   selector: 'app-home',
   templateUrl: 'home.page.html',
   styleUrls: ['home.page.scss'],
-  imports: [NgClass, IonContent, IonModal],
+  imports: [NgClass, FormsModule, IonContent, IonModal, IonToggle, IonLabel, IonCard, IonCardContent, IonCardHeader, IonCardTitle],
 })
 
 export class HomePage implements OnInit {
@@ -20,6 +21,11 @@ export class HomePage implements OnInit {
   alarmeAtivo: boolean = true;
   modalOpen: boolean = false;
   historicoPorDia: { dia: string; itens: any[] }[] = [];
+
+  // Modo Demonstração
+  modoDemo: boolean = false;
+  ultimaSimulacao: number = 0;
+  COOLDOWN_MS: number = 2000; // 2 segundos entre simulações
 
   iconAlarmeAtivo: string = `
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
@@ -145,5 +151,38 @@ export class HomePage implements OnInit {
 
   openModal() { this.modalOpen = true; }
   closeModal() { this.modalOpen = false; }
+
+  // Método para simular detecção de movimento (substitui o Arduino)
+  simularMovimento() {
+    const agora = Date.now();
+
+    // Cooldown: evita spam de simulações
+    if (agora - this.ultimaSimulacao < this.COOLDOWN_MS) {
+      console.log('Aguarde antes de simular novamente...');
+      return;
+    }
+
+    this.ultimaSimulacao = agora;
+
+    // Timestamp em segundos (igual ao Arduino)
+    const timestamp = Math.floor(agora / 1000);
+
+    // Escreve em 'movimentos' com ID único (push)
+    const movimentosRef = ref(db, 'movimentos');
+    const novoMovimentoRef = push(movimentosRef);
+
+    set(novoMovimentoRef, {
+      movimento: true,
+      timestamp: timestamp
+    })
+      .then(() => {
+        console.log('Movimento simulado com sucesso!');
+
+        // Atualiza ultimoMovimento
+        const ultimoMovimentoRef = ref(db, 'ultimoMovimento');
+        set(ultimoMovimentoRef, timestamp);
+      })
+      .catch((error) => console.error('Erro ao simular movimento:', error));
+  }
 
 }
